@@ -43,6 +43,30 @@ func TestDownload_MP4Stream(t *testing.T) {
 	assert.Len(video.Formats, 13)
 
 	if assert.Greater(len(video.Formats), 0) {
-		assert.NoError(dl.Download(video, video.Formats.FindByMimeType("video/mp4"), "test.mp4"))
+		resultFile, err := dl.Download(video, video.Formats.FindByMimeType("video/mp4"), "test.mp4")
+		assert.NoError(err)
+		assert.FileExists(resultFile)
+	}
+}
+
+func TestDownload_MP3(t *testing.T) {
+	assert := assert.New(t)
+	ctx := context.Background()
+	dl := NewDownloader("test_data")
+	// youtube-dl test video
+	video, err := dl.GetVideoInfo(ctx, "QcHvzNBtlOw")
+	assert.NoError(err)
+	assert.NotNil(video)
+
+	assert.Equal("Metallica - Frantic (Official Music Video)", video.Title)
+	assert.Equal("Warner Records Vault", video.Author)
+	assert.Equal(4*time.Minute+58*time.Second, video.Duration)
+	assert.Len(video.Formats, 13)
+
+	if assert.Greater(len(video.Formats), 0) {
+		resultFile, err := dl.DownloadMP3(video)
+		assert.NoError(err)
+		assert.FileExists(resultFile)
+		fmt.Printf("Result file : %s \n", resultFile)
 	}
 }

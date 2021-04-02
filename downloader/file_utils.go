@@ -1,11 +1,9 @@
 package downloader
 
 import (
-	"mime"
 	"regexp"
+	"strings"
 )
-
-const defaultExtension = ".mov"
 
 // Rely on hardcoded canonical mime types, as the ones provided by Go aren't exhaustive [1].
 // This seems to be a recurring problem for youtube downloaders, see [2].
@@ -16,6 +14,7 @@ const defaultExtension = ".mov"
 // [4] https://www.iana.org/assignments/media-types/media-types.xhtml#video
 // [5] https://support.google.com/youtube/troubleshooter/2888402?hl=en
 var canonicals = map[string]string{
+	"audio/mp4":        ".mp4a",
 	"video/quicktime":  ".mov",
 	"video/x-msvideo":  ".avi",
 	"video/x-matroska": ".mkv",
@@ -30,22 +29,12 @@ var canonicals = map[string]string{
 }
 
 func pickIdealFileExtension(mediaType string) string {
-	mediaType, _, err := mime.ParseMediaType(mediaType)
-	if err != nil {
-		return defaultExtension
+	for k, v := range canonicals {
+		if strings.Contains(mediaType, k) {
+			return v
+		}
 	}
-
-	if extension, ok := canonicals[mediaType]; ok {
-		return extension
-	}
-
-	// Our last resort is to ask the operating system, but these give multiple results and are rarely canonical.
-	extensions, err := mime.ExtensionsByType(mediaType)
-	if err != nil || extensions == nil {
-		return defaultExtension
-	}
-
-	return extensions[0]
+	return ""
 }
 
 func SanitizeFilename(fileName string) string {

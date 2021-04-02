@@ -14,6 +14,7 @@ import (
 	"path/filepath"
 	"regexp"
 	"strconv"
+	"strings"
 	"time"
 )
 
@@ -51,49 +52,64 @@ func NewDownloader(outputDir string) *Downloader {
 }
 
 func (dl *Downloader) getOutputFile(v *types.Video, format *types.Format, outputFile string) (string, error) {
+	outputDir := dl.OutputDir
 	if outputFile == "" {
-		outputFile = SanitizeFilename(v.Title)
+		if strings.Index(v.Title, "-") > 0 {
+			splits := strings.SplitAfterN(v.Title, "-", 2)
+			outputDir = filepath.Join(outputDir, SanitizeFilename(strings.Trim(splits[0], "- ")))
+			outputFile = SanitizeFilename(strings.Trim(splits[1], " "))
+		} else {
+			outputFile = SanitizeFilename(v.Title)
+		}
 		outputFile += pickIdealFileExtension(format.MimeType)
 	}
 
-	if dl.OutputDir != "" {
-		if err := os.MkdirAll(dl.OutputDir, 0o755); err != nil {
+	if outputDir != "" {
+		if err := os.MkdirAll(outputDir, 0o755); err != nil {
 			return "", err
 		}
-		outputFile = filepath.Join(dl.OutputDir, outputFile)
+		outputFile = filepath.Join(outputDir, outputFile)
 	}
 
 	return outputFile, nil
 }
 
-// Download : Starting download video by arguments.
-func (dl *Downloader) Download(v *types.Video, format *types.Format, outputFile string) error {
+func (dl *Downloader) DownloadMP3(v *types.Video) (string, error) {
+	// seems id tag 140 is mp4 audio
+	youtubeFile, err := dl.Download(v, v.Formats.FindByItag(140), "")
+	if err != nil {
+		return "", err
+	}
+	return ConvertMP4aToMP3(youtubeFile)
+}
+
+func (dl *Downloader) Download(v *types.Video, format *types.Format, outputFile string) (string, error) {
 	destFile, err := dl.getOutputFile(v, format, outputFile)
 	if err != nil {
-		return err
+		return "", err
 	}
 
 	// Create output file
 	out, err := os.Create(destFile)
 	if err != nil {
-		return err
+		return "", err
 	}
 	defer out.Close()
 
-	fmt.Printf("Download to file=%s", destFile)
+	fmt.Printf("Download to file= %s \n", destFile)
 
 	resp, err := dl.getStream(v, format)
 	if err != nil {
-		return err
+		return "", err
 	}
 	defer resp.Body.Close()
 
 	_, err = io.Copy(out, resp.Body)
 	if err != nil {
-		return err
+		return "", err
 	}
 
-	return nil
+	return destFile, nil
 }
 
 // GetVideoInfo fetches video metadata with a context
@@ -306,9 +322,8 @@ func (dl *Downloader) parseDecipherOps(videoID string) (operations []DecipherOpe
 	return ops, nil
 }
 
-// httpGet does a HTTP GET request, checks the response to be a 200 OK and returns it
 func (dl *Downloader) httpGet(ctx context.Context, url string) (resp *http.Response, err error) {
-	fmt.Printf("GET %s", url)
+	fmt.Printf("GET %s\n", url)
 
 	req, err := http.NewRequestWithContext(ctx, http.MethodGet, url, nil)
 	if err != nil {
@@ -328,7 +343,6 @@ func (dl *Downloader) httpGet(ctx context.Context, url string) (resp *http.Respo
 	return
 }
 
-// httpGetBodyBytes reads the whole HTTP body and returns it
 func (dl *Downloader) httpGetBodyBytes(ctx context.Context, url string) ([]byte, error) {
 	resp, err := dl.httpGet(ctx, url)
 	if err != nil {
