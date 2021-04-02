@@ -67,7 +67,7 @@ func (dl *Downloader) getOutputFile(v *types.Video, format *types.Format, output
 }
 
 // Download : Starting download video by arguments.
-func (dl *Downloader) Download(ctx context.Context, v *types.Video, format *types.Format, outputFile string) error {
+func (dl *Downloader) Download(v *types.Video, format *types.Format, outputFile string) error {
 	destFile, err := dl.getOutputFile(v, format, outputFile)
 	if err != nil {
 		return err
@@ -82,7 +82,7 @@ func (dl *Downloader) Download(ctx context.Context, v *types.Video, format *type
 
 	fmt.Printf("Download to file=%s", destFile)
 
-	resp, err := dl.GetStream(v, format)
+	resp, err := dl.getStream(v, format)
 	if err != nil {
 		return err
 	}
@@ -101,7 +101,9 @@ func (dl *Downloader) GetVideoInfo(ctx context.Context, id string) (*types.Video
 
 	// Circumvent age restriction to pretend access through googleapis.com
 	eurl := "https://youtube.googleapis.com/v/" + id
-	body, err := dl.httpGetBodyBytes(ctx, "https://youtube.com/get_video_info?video_id="+id+"&eurl="+eurl)
+	finalUrl := "https://youtube.com/get_video_info?video_id=" + id + "&eurl=" + eurl
+	fmt.Printf("GET video info : %s", finalUrl)
+	body, err := dl.httpGetBodyBytes(ctx, finalUrl)
 	if err != nil {
 		return nil, err
 	}
@@ -114,7 +116,9 @@ func (dl *Downloader) GetVideoInfo(ctx context.Context, id string) (*types.Video
 
 	// If the uploader has disabled embedding the video on other sites, parse video page
 	if err == types.ErrNotPlayableInEmbed {
-		html, err := dl.httpGetBodyBytes(ctx, "https://www.youtube.com/watch?v="+id)
+		videoPageUrl := "https://www.youtube.com/watch?v=" + id
+		fmt.Printf("EMBED DISABLED, GET video page: %s", videoPageUrl)
+		html, err := dl.httpGetBodyBytes(ctx, videoPageUrl)
 		if err != nil {
 			return nil, err
 		}
@@ -126,8 +130,8 @@ func (dl *Downloader) GetVideoInfo(ctx context.Context, id string) (*types.Video
 }
 
 // GetStream returns the HTTP response for a specific format
-func (dl *Downloader) GetStream(video *types.Video, format *types.Format) (*http.Response, error) {
-	url, err := dl.GetStreamURL(video, format)
+func (dl *Downloader) getStream(video *types.Video, format *types.Format) (*http.Response, error) {
+	url, err := dl.getStreamURL(video, format)
 	if err != nil {
 		return nil, err
 	}
@@ -136,7 +140,7 @@ func (dl *Downloader) GetStream(video *types.Video, format *types.Format) (*http
 }
 
 // GetStreamURL returns the url for a specific format
-func (dl *Downloader) GetStreamURL(video *types.Video, format *types.Format) (string, error) {
+func (dl *Downloader) getStreamURL(video *types.Video, format *types.Format) (string, error) {
 	if format.URL != "" {
 		return format.URL, nil
 	}

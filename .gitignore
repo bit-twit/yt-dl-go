@@ -1,0 +1,4 @@
+yt-dl-go
+resources/*.md
+resources/client_secret.json
+**/test_data/**/*
