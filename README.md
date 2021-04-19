@@ -9,10 +9,10 @@ Uses Google Youtube Go SDK.
 
 - [x] integrate with GO SDK to pull video information for user
 - [x] add downloading video (mp3) for a video ID
-- [] download videos to a specific folder (right now it just outputs video ids from Google Youtube API - downloading needs to be called separately from Downloader)
-- [] add Youtube history support
-- [] advanced cli options
-- [] run as server
+- [ ] download videos to a specific folder (right now it just outputs video ids from Google Youtube API - downloading needs to be called separately from Downloader)
+- [ ] add Youtube history support
+- [ ] advanced cli options
+- [ ] run as server
 
 # Run
 
