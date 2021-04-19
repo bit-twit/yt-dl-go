@@ -1,7 +1,7 @@
-Youtube downloader in GO
-===========================
+WIP - Youtube downloader in GO
+===============================
 
-WIP - simple cli to fetch video information from a youtube account (playlists, liked). 
+Simple cli to fetch video information from a youtube account (playlists, liked, history). 
 
 Uses Google Youtube Go SDK.
 
@@ -9,7 +9,7 @@ Uses Google Youtube Go SDK.
 
 + integrate with GO SDK to pull video information for user
 + add downloading capabilities for a video ID
-- automate video downloading for all fetched videos (right now it just outputs video ids from Google Youtube API)
+- download videos to a specific folder (right now it just outputs video ids from Google Youtube API - downloading needs to be called separately from Downloader)
 - add Youtube history support
 - advanced cli options
 - run as server
